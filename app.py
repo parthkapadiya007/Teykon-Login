@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import requests
@@ -11,8 +11,14 @@ app.secret_key = config.SECRET_KEY
 
 # ---------------- HELPERS ----------------
 
+def get_ist_time():
+    """Get current IST time (UTC + 5:30)"""
+    utc_now = datetime.utcnow()
+    ist_now = utc_now + timedelta(hours=5, minutes=30)
+    return ist_now
+
 def today():
-    return str(datetime.now().date())
+    return str(get_ist_time().date())
 
 
 def load_data():
@@ -131,7 +137,7 @@ def send_to_google_sheet(user, action, ip):
         "name": user,
         "action": action,
         "ip": ip,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": get_ist_time().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     print(f"=== GOOGLE SHEET DEBUG ===")
@@ -360,7 +366,7 @@ def mark_in():
 
     user = session["user"]
     ip = get_public_ip()
-    current_time = datetime.now().strftime("%H:%M:%S")
+    current_time = get_ist_time().strftime("%H:%M:%S")
 
     data = load_data()
 
@@ -391,7 +397,7 @@ def mark_out():
 
     user = session["user"]
     ip = get_public_ip()
-    current_time = datetime.now().strftime("%H:%M:%S")
+    current_time = get_ist_time().strftime("%H:%M:%S")
 
     data = load_data()
 
@@ -425,6 +431,84 @@ def logout():
     print("Redirecting to login page...")
     
     return redirect("/")
+
+
+# ---------------- DEBUG CURRENT TIME ----------------
+
+@app.route("/debug-current-time")
+def debug_current_time():
+    """Debug current time and timezone issues"""
+    print("=== DEBUG CURRENT TIME ===")
+    
+    import time
+    
+    # Get various time formats
+    now_utc = datetime.utcnow()
+    now_local = datetime.now()
+    
+    # Current time in different formats
+    current_24hr = now_local.strftime("%H:%M:%S")
+    current_12hr = convert_to_12hour(current_24hr)
+    
+    debug_info = {
+        "server_info": {
+            "utc_time": now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "local_time": now_local.strftime("%Y-%m-%d %H:%M:%S"),
+            "timezone": str(now_local.astimezone().tzinfo),
+            "timestamp": time.time()
+        },
+        "time_display": {
+            "24hr_format": current_24hr,
+            "12hr_format": current_12hr,
+            "date": now_local.strftime("%Y-%m-%d"),
+            "hour": now_local.hour,
+            "minute": now_local.minute,
+            "second": now_local.second
+        },
+        "conversion_test": {
+            "input": current_24hr,
+            "output": current_12hr,
+            "success": current_12hr != "--:--" and current_12hr != current_24hr
+        }
+    }
+    
+    # Test with attendance data
+    data = load_data()
+    sample_data = {}
+    for user, user_data in data.items():
+        for date, date_data in user_data.items():
+            if "last_in" in date_data:
+                sample_data[user] = {
+                    "date": date,
+                    "last_in": date_data["last_in"],
+                    "last_in_converted": convert_to_12hour(date_data["last_in"]),
+                    "last_out": date_data.get("last_out", "N/A"),
+                    "last_out_converted": convert_to_12hour(date_data.get("last_out")) if date_data.get("last_out") else "N/A"
+                }
+            break
+        if sample_data:
+            break
+    
+    debug_info["attendance_data"] = sample_data
+    
+    return f"""
+    <h2>Current Time Debug Information</h2>
+    <h3>Server Time Information</h3>
+    <pre>{json.dumps(debug_info["server_info"], indent=2)}</pre>
+    
+    <h3>Time Display</h3>
+    <pre>{json.dumps(debug_info["time_display"], indent=2)}</pre>
+    
+    <h3>Conversion Test</h3>
+    <pre>{json.dumps(debug_info["conversion_test"], indent=2)}</pre>
+    
+    <h3>Sample Attendance Data</h3>
+    <pre>{json.dumps(debug_info["attendance_data"], indent=2)}</pre>
+    
+    <br><br>
+    <a href='/'>Back to Login</a> | 
+    <a href='/dashboard'>Dashboard</a>
+    """
 
 
 # ---------------- RUN ----------------
