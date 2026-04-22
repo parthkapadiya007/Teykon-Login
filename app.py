@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 from datetime import datetime
 import json
+import os
 import requests
 import config
 
@@ -16,15 +17,27 @@ def today():
 
 def load_data():
     try:
-        with open("attendance.json", "r") as f:
+        # Get absolute path for PythonAnywhere
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        attendance_path = os.path.join(base_dir, "attendance.json")
+        
+        with open(attendance_path, "r") as f:
             return json.load(f)
-    except:
+    except Exception as e:
+        print(f"Error loading attendance data: {e}")
         return {}
 
 
 def save_data(data):
-    with open("attendance.json", "w") as f:
-        json.dump(data, f, indent=4)
+    try:
+        # Get absolute path for PythonAnywhere
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        attendance_path = os.path.join(base_dir, "attendance.json")
+        
+        with open(attendance_path, "w") as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"Error saving attendance data: {e}")
 
 
 def convert_to_12hour(time_str):
@@ -177,6 +190,57 @@ def simple_test():
     print("=== Simple Test ===")
     result = send_to_google_sheet("TestUser", "TEST", "127.0.0.1")
     return f"Simple Test Result: {'SUCCESS' if result else 'FAILED'}"
+
+
+@app.route("/debug-config")
+def debug_config():
+    """Debug route to check config loading"""
+    print("=== DEBUG CONFIG ===")
+    
+    debug_info = {
+        "config_loaded": bool(hasattr(config, 'USERS')),
+        "users_dict": getattr(config, 'USERS', 'NOT FOUND'),
+        "secret_key": getattr(config, 'SECRET_KEY', 'NOT FOUND'),
+        "office_ip": getattr(config, 'OFFICE_IP', 'NOT FOUND'),
+        "google_url": getattr(config, 'GOOGLE_SCRIPT_URL', 'NOT FOUND'),
+        "file_paths": {
+            "attendance_exists": False,
+            "attendance_readable": False,
+            "config_exists": False
+        }
+    }
+    
+    # Check file paths with absolute paths
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        attendance_path = os.path.join(base_dir, "attendance.json")
+        config_path = os.path.join(base_dir, "config.py")
+        
+        debug_info["file_paths"]["base_dir"] = base_dir
+        debug_info["file_paths"]["attendance_path"] = attendance_path
+        debug_info["file_paths"]["config_path"] = config_path
+        debug_info["file_paths"]["attendance_exists"] = os.path.exists(attendance_path)
+        debug_info["file_paths"]["attendance_readable"] = os.access(attendance_path, os.R_OK) if os.path.exists(attendance_path) else False
+        debug_info["file_paths"]["config_exists"] = os.path.exists(config_path)
+    except Exception as e:
+        debug_info["file_paths"]["error"] = str(e)
+    
+    # Test user validation
+    test_username = "Neha"
+    test_password = "123"
+    debug_info["test_login"] = {
+        "username": test_username,
+        "password": test_password,
+        "user_exists": test_username in getattr(config, 'USERS', {}),
+        "password_match": getattr(config, 'USERS', {}).get(test_username) == test_password
+    }
+    
+    return f"""
+    <h2>Debug Information</h2>
+    <pre>{json.dumps(debug_info, indent=2)}</pre>
+    <br>
+    <a href='/'>Back to Login</a>
+    """
 
 
 # ---------------- LOGIN ----------------
