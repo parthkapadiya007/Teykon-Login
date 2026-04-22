@@ -419,7 +419,7 @@
                             OUT Time
                         </div>
                         <div class="time-value">
-                            {{ outtime if outtime and outtime > intime else '--:--:--' }}
+                            {{ outtime if outtime else '--:--:--' }}
                         </div>
                     </div>
                 </div>
@@ -438,13 +438,12 @@
             </div>
             
             <div class="action-section">
-                {% if intime and (not outtime or outtime < intime) %}
+                {% if intime and not outtime %}
                     <!-- IN marked, need OUT -->
                     <a href="/out" class="action-btn btn-out">
                         <i class="fas fa-sign-out-alt"></i>
                         OUT
                     </a>
-                {% elif outtime and outtime > intime %}
                 {% else %}
                     <!-- Need IN -->
                     <a href="/in" class="action-btn btn-in">

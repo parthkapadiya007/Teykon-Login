@@ -227,62 +227,24 @@ def test_all():
         "google_sheets": {}
     }
     
-    # Test time conversion
-    test_time = "14:57:19"
-    converted = convert_to_12hour(test_time)
+    # Test time conversion with multiple examples
+    test_times = ["14:57:19", "09:30:00", "23:45:30", "12:00:00", "01:15:45"]
+    time_results = []
+    
+    for test_time in test_times:
+        converted = convert_to_12hour(test_time)
+        time_results.append({
+            "input": test_time,
+            "output": converted,
+            "success": converted != "--:--" and converted != test_time
+        })
+    
     test_results["time_conversion"] = {
-        "input": test_time,
-        "output": converted,
-        "success": converted != "--:--"
+        "tests": time_results,
+        "all_success": all(t["success"] for t in time_results)
     }
     
     # Test IP fetching
-    ip = get_public_ip()
-    test_results["ip_fetching"] = {
-        "ip": ip,
-        "success": ip != "0.0.0.0"
-    }
-    
-    # Test file operations
-    try:
-        test_data = {"test": "data"}
-        save_data(test_data)
-        loaded_data = load_data()
-        test_results["file_operations"] = {
-            "success": "test" in loaded_data
-        }
-    except Exception as e:
-        test_results["file_operations"] = {
-            "success": False,
-            "error": str(e)
-        }
-    
-    # Test config loading
-    test_results["config_loading"] = {
-        "users_loaded": bool(hasattr(config, 'USERS')),
-        "users_count": len(getattr(config, 'USERS', {})),
-        "office_ip": getattr(config, 'OFFICE_IP', 'NOT FOUND')
-    }
-    
-    # Test Google Sheets
-    test_results["google_sheets"] = {
-        "url": getattr(config, 'GOOGLE_SCRIPT_URL', 'NOT FOUND'),
-        "test_result": send_to_google_sheet("TestUser", "TEST", ip)
-    }
-    
-    return f"""
-    <h2>Comprehensive Test Results</h2>
-    <pre>{json.dumps(test_results, indent=2)}</pre>
-    <br><br>
-    <a href='/'>Back to Login</a> | 
-    <a href='/debug-config'>Debug Config</a> |
-    <a href='/dashboard'>Dashboard</a>
-    """
-
-
-@app.route("/debug-config")
-def debug_config():
-    """Debug route to check config loading"""
     print("=== DEBUG CONFIG ===")
     
     debug_info = {
