@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teykon Attendance - Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(40px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 6s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-header .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 8px;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-body {
+            padding: 40px;
+            background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: white;
+            color: #1e3c72;
+            font-weight: 500;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+            color: #1e3c72;
+        }
+        
+        .form-input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 25px rgba(30, 60, 114, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(30, 60, 114, 0.4);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .access-denied {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(239, 68, 68, 0.3);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .access-denied h1 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .access-denied p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .error-popup {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+            animation: slideDown 0.3s ease-out;
+            position: relative;
+        }
+        
+        @keyframes slideDown {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .error-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .error-content i {
+            font-size: 1.1rem;
+        }
+        
+        .error-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+        
+        .error-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        @media (max-width: 640px) {
+            .login-container {
+                margin: 15px;
+                border-radius: 20px;
+                max-width: 100%;
+            }
+            
+            .login-body {
+                padding: 30px;
+            }
+            
+            .login-header {
+                padding: 30px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <i class="fas fa-user-circle"></i>
+                Employee Login
+            </h1>
+            <div class="subtitle">Teykon Attendance System</div>
+        </div>
+        
+        <div class="login-body">
+            {% if error %}
+            <div class="error-popup" id="errorPopup">
+                <div class="error-content">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ error }}</span>
+                    <button type="button" class="error-close" onclick="closeError()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="POST" action="/">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user" style="margin-right: 6px;"></i>
+                        Username
+                    </label>
+                    <input type="text" name="username" class="form-input" placeholder="Enter your username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock" style="margin-right: 6px;"></i>
+                        Password
+                    </label>
+                    <input type="password" name="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function closeError() {
+        const errorPopup = document.getElementById('errorPopup');
+        if (errorPopup) {
+            errorPopup.style.animation = 'slideUp 0.3s ease-out reverse';
+            setTimeout(() => {
+                errorPopup.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    async function checkIP() {
+        try {
+            const res = await fetch("https://api.ipify.org?format=json");
+            const data = await res.json();
+
+            const allowedIP = "122.172.241.8";
+
+            if (data.ip !== allowedIP) {
+                document.body.innerHTML = `
+                    <div class="access-denied">
+                        <h1><i class="fas fa-exclamation-triangle"></i> Access Denied</h1>
+                        <p>Office Network Only Required</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Your IP: ${data.ip}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.log('IP check failed:', error);
+        }
+    }
+
+    checkIP();
+    </script>
+</body>
+</html>

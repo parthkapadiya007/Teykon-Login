@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teykon Attendance - Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            width: 100%;
+            max-width: 650px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(40px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 35px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 6s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: 8px;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            padding: 35px;
+            background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
+        }
+        
+        .status-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(30, 60, 114, 0.08);
+            border: 1px solid rgba(30, 60, 114, 0.1);
+        }
+        
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        
+        .status-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-date {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .times-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .time-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .time-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+        }
+        
+        .time-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(30, 60, 114, 0.15);
+            border-color: #2a5298;
+        }
+        
+        .time-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .time-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e3c72;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+        
+        .working-hours-card {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.05rem;
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.3);
+            margin-top: 20px;
+        }
+        
+        .working-hours-label {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .working-hours-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+        
+        .complete-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .action-section {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(30, 60, 114, 0.08);
+            border: 1px solid rgba(30, 60, 114, 0.1);
+        }
+        
+        .action-btn {
+            padding: 16px 40px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-in {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-in:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-out {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-out:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(239, 68, 68, 0.4);
+        }
+        
+        .completion-message {
+            padding: 25px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 16px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.05rem;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+        }
+        
+        .completion-title {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .completion-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+        
+        .logout-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+        
+        @media (max-width: 640px) {
+            .dashboard {
+                margin: 15px;
+                border-radius: 20px;
+                max-width: 100%;
+            }
+            
+            .content {
+                padding: 25px;
+            }
+            
+            .times-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .action-btn {
+                padding: 14px 30px;
+                font-size: 0.95rem;
+            }
+            
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            
+            .header {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>
+                <i class="fas fa-user-circle"></i>
+                {{ user }}
+            </h1>
+            <div class="subtitle">Teykon Attendance System</div>
+        </div>
+        
+        <div class="content">
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-title">
+                        <i class="fas fa-chart-line"></i>
+                        Today's Attendance
+                    </div>
+                    <div class="status-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ today_date }}
+                    </div>
+                </div>
+                
+                <div class="times-grid">
+                    <div class="time-card">
+                        <div class="time-label">
+                            <i class="fas fa-sign-in-alt" style="color: #10b981;"></i>
+                            IN Time
+                        </div>
+                        <div class="time-value">
+                            {{ intime if intime else '--:--:--' }}
+                        </div>
+                    </div>
+                    
+                    <div class="time-card">
+                        <div class="time-label">
+                            <i class="fas fa-sign-out-alt" style="color: #ef4444;"></i>
+                            OUT Time
+                        </div>
+                        <div class="time-value">
+                            {{ outtime if outtime and outtime > intime else '--:--:--' }}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if working_hours and working_hours != "--:--" %}
+                <div class="working-hours-card">
+                    <div class="working-hours-label">
+                        <i class="fas fa-clock" style="color: #8b5cf6;"></i>
+                        Total Working Hours
+                    </div>
+                    <div class="working-hours-value">
+                        {{ working_hours }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="action-section">
+                {% if intime and (not outtime or outtime < intime) %}
+                    <!-- IN marked, need OUT -->
+                    <a href="/out" class="action-btn btn-out">
+                        <i class="fas fa-sign-out-alt"></i>
+                        OUT
+                    </a>
+                {% elif outtime and outtime > intime %}
+                {% else %}
+                    <!-- Need IN -->
+                    <a href="/in" class="action-btn btn-in">
+                        <i class="fas fa-sign-in-alt"></i>
+                        IN
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <form action="/logout" method="POST" style="display: inline;">
+                <button type="submit" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
