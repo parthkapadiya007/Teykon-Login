@@ -88,12 +88,18 @@ def calculate_working_hours(in_time, out_time):
         # Convert to total seconds
         total_seconds = diff.total_seconds()
         
+        # Handle negative time (if out_time is before in_time)
+        if total_seconds < 0:
+            return "--:--"
+        
         # Calculate hours and minutes
         hours = int(total_seconds // 3600)
         minutes = int((total_seconds % 3600) // 60)
         
         return f"{hours:02d}:{minutes:02d}"
-    except:
+    except Exception as e:
+        print(f"Working hours calculation error: {e}")
+        print(f"in_time: {in_time}, out_time: {out_time}")
         return "--:--"
 
 
@@ -132,13 +138,17 @@ def office_only():
 
 # -------- GOOGLE SHEET SAVE --------
 
-def send_to_google_sheet(user, action, ip):
+def send_to_google_sheet(user, action, ip, working_hours=None):
     data = {
         "name": user,
         "action": action,
         "ip": ip,
         "timestamp": get_ist_time().strftime("%Y-%m-%d %H:%M:%S")
     }
+    
+    # Add working hours if provided
+    if working_hours and working_hours != "--:--":
+        data["working_hours"] = working_hours
 
     print(f"=== GOOGLE SHEET DEBUG ===")
     print(f"Sending data: {data}")
@@ -174,136 +184,10 @@ def send_to_google_sheet(user, action, ip):
         return False
 
 
-def doPost():
-    print("doPost function called")
-
-
-@app.route("/test-google-sheet")
-def test_google_sheet():
-    """Test route to debug Google Sheets integration"""
-    if "user" not in session:
-        return redirect("/")
-    
-    user = session["user"]
-    ip = get_public_ip()
-    
-    print("=== Testing Google Sheet Integration ===")
-    result = send_to_google_sheet(user, "TEST", ip)
-    print(f"Test Result: {result}")
-    
-    # Try direct URL test
-    try:
-        response = requests.get(config.GOOGLE_SCRIPT_URL, timeout=5)
-        get_result = f"GET Test: {response.status_code} - {response.text}"
-        print(get_result)
-    except Exception as e:
-        get_result = f"GET Test Error: {e}"
-        print(get_result)
-    
-    return f"""
-    <h2>Google Sheet Test Result</h2>
-    <p><strong>Main Test:</strong> {'SUCCESS' if result else 'FAILED'}</p>
-    <p><strong>URL Test:</strong> {get_result}</p>
-    <p><strong>URL:</strong> {config.GOOGLE_SCRIPT_URL}</p>
-    <p><strong>User:</strong> {user}</p>
-    <p><strong>IP:</strong> {ip}</p>
-    <p><br>Check console for detailed logs</p>
-    <p><a href='/dashboard'>Back to Dashboard</a></p>
-    """
-
-
-@app.route("/simple-test")
-def simple_test():
-    """Simple test without login"""
-    print("=== Simple Test ===")
-    result = send_to_google_sheet("TestUser", "TEST", "127.0.0.1")
-    return f"Simple Test Result: {'SUCCESS' if result else 'FAILED'}"
-
-
-@app.route("/test-all")
-def test_all():
-    """Comprehensive test of all functionality"""
-    print("=== COMPREHENSIVE TEST ===")
-    
-    test_results = {
-        "time_conversion": {},
-        "ip_fetching": {},
-        "file_operations": {},
-        "config_loading": {},
-        "google_sheets": {}
-    }
-    
-    # Test time conversion with multiple examples
-    test_times = ["14:57:19", "09:30:00", "23:45:30", "12:00:00", "01:15:45"]
-    time_results = []
-    
-    for test_time in test_times:
-        converted = convert_to_12hour(test_time)
-        time_results.append({
-            "input": test_time,
-            "output": converted,
-            "success": converted != "--:--" and converted != test_time
-        })
-    
-    test_results["time_conversion"] = {
-        "tests": time_results,
-        "all_success": all(t["success"] for t in time_results)
-    }
-    
-    # Test IP fetching
-    print("=== DEBUG CONFIG ===")
-    
-    debug_info = {
-        "config_loaded": bool(hasattr(config, 'USERS')),
-        "users_dict": getattr(config, 'USERS', 'NOT FOUND'),
-        "secret_key": getattr(config, 'SECRET_KEY', 'NOT FOUND'),
-        "office_ip": getattr(config, 'OFFICE_IP', 'NOT FOUND'),
-        "google_url": getattr(config, 'GOOGLE_SCRIPT_URL', 'NOT FOUND'),
-        "file_paths": {
-            "attendance_exists": False,
-            "attendance_readable": False,
-            "config_exists": False
-        }
-    }
-    
-    # Check file paths with absolute paths
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        attendance_path = os.path.join(base_dir, "attendance.json")
-        config_path = os.path.join(base_dir, "config.py")
-        
-        debug_info["file_paths"]["base_dir"] = base_dir
-        debug_info["file_paths"]["attendance_path"] = attendance_path
-        debug_info["file_paths"]["config_path"] = config_path
-        debug_info["file_paths"]["attendance_exists"] = os.path.exists(attendance_path)
-        debug_info["file_paths"]["attendance_readable"] = os.access(attendance_path, os.R_OK) if os.path.exists(attendance_path) else False
-        debug_info["file_paths"]["config_exists"] = os.path.exists(config_path)
-    except Exception as e:
-        debug_info["file_paths"]["error"] = str(e)
-    
-    # Test user validation
-    test_username = "Neha"
-    test_password = "123"
-    debug_info["test_login"] = {
-        "username": test_username,
-        "password": test_password,
-        "user_exists": test_username in getattr(config, 'USERS', {}),
-        "password_match": getattr(config, 'USERS', {}).get(test_username) == test_password
-    }
-    
-    return f"""
-    <h2>Debug Information</h2>
-    <pre>{json.dumps(debug_info, indent=2)}</pre>
-    <br>
-    <a href='/'>Back to Login</a>
-    """
-
-
 # ---------------- LOGIN ----------------
 
 @app.route("/", methods=["GET", "POST"])
 def login():
-
 
     if request.method == "POST":
         username = request.form.get("username", "")
@@ -347,7 +231,7 @@ def dashboard():
     return render_template(
         "dashboard.html",
         user=user,
-        today_date=today(),
+        today_date=get_ist_time().strftime("%Y-%m-%d"),  # Always show current date
         intime=intime_12hr,
         outtime=outtime_12hr,
         intime_raw=intime,  # Add raw times for button logic
@@ -382,6 +266,7 @@ def mark_in():
     data[user][today()]["in_times"].append(current_time)
     data[user][today()]["last_in"] = current_time
 
+    # Send to Google Sheets (no working hours on IN)
     send_to_google_sheet(user, "IN", ip)
 
     save_data(data)
@@ -413,7 +298,9 @@ def mark_out():
     data[user][today()]["out_times"].append(current_time)
     data[user][today()]["last_out"] = current_time
 
-    send_to_google_sheet(user, "OUT", ip)
+    # Send to Google Sheets with working hours
+    working_hours = calculate_working_hours(data[user][today()].get("last_in"), current_time)
+    send_to_google_sheet(user, "OUT", ip, working_hours)
 
     save_data(data)
 
@@ -433,84 +320,6 @@ def logout():
     print("Redirecting to login page...")
     
     return redirect("/")
-
-
-# ---------------- DEBUG CURRENT TIME ----------------
-
-@app.route("/debug-current-time")
-def debug_current_time():
-    """Debug current time and timezone issues"""
-    print("=== DEBUG CURRENT TIME ===")
-    
-    import time
-    
-    # Get various time formats
-    now_utc = datetime.utcnow()
-    now_local = datetime.now()
-    
-    # Current time in different formats
-    current_24hr = now_local.strftime("%H:%M:%S")
-    current_12hr = convert_to_12hour(current_24hr)
-    
-    debug_info = {
-        "server_info": {
-            "utc_time": now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
-            "local_time": now_local.strftime("%Y-%m-%d %H:%M:%S"),
-            "timezone": str(now_local.astimezone().tzinfo),
-            "timestamp": time.time()
-        },
-        "time_display": {
-            "24hr_format": current_24hr,
-            "12hr_format": current_12hr,
-            "date": now_local.strftime("%Y-%m-%d"),
-            "hour": now_local.hour,
-            "minute": now_local.minute,
-            "second": now_local.second
-        },
-        "conversion_test": {
-            "input": current_24hr,
-            "output": current_12hr,
-            "success": current_12hr != "--:--" and current_12hr != current_24hr
-        }
-    }
-    
-    # Test with attendance data
-    data = load_data()
-    sample_data = {}
-    for user, user_data in data.items():
-        for date, date_data in user_data.items():
-            if "last_in" in date_data:
-                sample_data[user] = {
-                    "date": date,
-                    "last_in": date_data["last_in"],
-                    "last_in_converted": convert_to_12hour(date_data["last_in"]),
-                    "last_out": date_data.get("last_out", "N/A"),
-                    "last_out_converted": convert_to_12hour(date_data.get("last_out")) if date_data.get("last_out") else "N/A"
-                }
-            break
-        if sample_data:
-            break
-    
-    debug_info["attendance_data"] = sample_data
-    
-    return f"""
-    <h2>Current Time Debug Information</h2>
-    <h3>Server Time Information</h3>
-    <pre>{json.dumps(debug_info["server_info"], indent=2)}</pre>
-    
-    <h3>Time Display</h3>
-    <pre>{json.dumps(debug_info["time_display"], indent=2)}</pre>
-    
-    <h3>Conversion Test</h3>
-    <pre>{json.dumps(debug_info["conversion_test"], indent=2)}</pre>
-    
-    <h3>Sample Attendance Data</h3>
-    <pre>{json.dumps(debug_info["attendance_data"], indent=2)}</pre>
-    
-    <br><br>
-    <a href='/'>Back to Login</a> | 
-    <a href='/dashboard'>Dashboard</a>
-    """
 
 
 # ---------------- RUN ----------------
