@@ -350,6 +350,8 @@ def dashboard():
         today_date=today(),
         intime=intime_12hr,
         outtime=outtime_12hr,
+        intime_raw=intime,  # Add raw times for button logic
+        outtime_raw=outtime,  # Add raw times for button logic
         working_hours=working_hours,
         in_times=today_data.get("in_times", []),
         out_times=today_data.get("out_times", [])
