@@ -51,6 +51,7 @@ def convert_to_12hour(time_str):
         # Convert to 12-hour format
         hour = dt.hour
         minute = dt.minute
+        second = dt.second
         
         # Determine AM/PM
         period = "AM" if hour < 12 else "PM"
@@ -60,9 +61,10 @@ def convert_to_12hour(time_str):
         if hour_12 == 0:
             hour_12 = 12
         
-        return f"{hour_12:02d}:{minute:02d} {period}"
-    except:
-        return "--:--"
+        return f"{hour_12:02d}:{minute:02d}:{second:02d} {period}"
+    except Exception as e:
+        print(f"Time conversion error: {e} for time_str: {time_str}")
+        return time_str  # Return original if conversion fails
 
 
 def calculate_working_hours(in_time, out_time):
@@ -92,10 +94,30 @@ def calculate_working_hours(in_time, out_time):
 # -------- PUBLIC IP CHECK (OFFICE WIFI LOCK) --------
 
 def get_public_ip():
-    try:
-        return requests.get("https://api.ipify.org").text
-    except:
-        return "0.0.0.0"
+    # Try multiple IP services for better reliability
+    ip_services = [
+        "https://api.ipify.org",
+        "https://ipinfo.io/ip",
+        "https://icanhazip.com",
+        "https://checkip.amazonaws.com"
+    ]
+    
+    for service in ip_services:
+        try:
+            response = requests.get(service, timeout=5)
+            if response.status_code == 200:
+                ip = response.text.strip()
+                # Validate IP format
+                parts = ip.split('.')
+                if len(parts) == 4 and all(0 <= int(part) <= 255 for part in parts):
+                    print(f"Successfully got IP: {ip} from {service}")
+                    return ip
+        except Exception as e:
+            print(f"Failed to get IP from {service}: {e}")
+            continue
+    
+    print("All IP services failed, using fallback")
+    return "0.0.0.0"
 
 
 def office_only():
@@ -190,6 +212,72 @@ def simple_test():
     print("=== Simple Test ===")
     result = send_to_google_sheet("TestUser", "TEST", "127.0.0.1")
     return f"Simple Test Result: {'SUCCESS' if result else 'FAILED'}"
+
+
+@app.route("/test-all")
+def test_all():
+    """Comprehensive test of all functionality"""
+    print("=== COMPREHENSIVE TEST ===")
+    
+    test_results = {
+        "time_conversion": {},
+        "ip_fetching": {},
+        "file_operations": {},
+        "config_loading": {},
+        "google_sheets": {}
+    }
+    
+    # Test time conversion
+    test_time = "14:57:19"
+    converted = convert_to_12hour(test_time)
+    test_results["time_conversion"] = {
+        "input": test_time,
+        "output": converted,
+        "success": converted != "--:--"
+    }
+    
+    # Test IP fetching
+    ip = get_public_ip()
+    test_results["ip_fetching"] = {
+        "ip": ip,
+        "success": ip != "0.0.0.0"
+    }
+    
+    # Test file operations
+    try:
+        test_data = {"test": "data"}
+        save_data(test_data)
+        loaded_data = load_data()
+        test_results["file_operations"] = {
+            "success": "test" in loaded_data
+        }
+    except Exception as e:
+        test_results["file_operations"] = {
+            "success": False,
+            "error": str(e)
+        }
+    
+    # Test config loading
+    test_results["config_loading"] = {
+        "users_loaded": bool(hasattr(config, 'USERS')),
+        "users_count": len(getattr(config, 'USERS', {})),
+        "office_ip": getattr(config, 'OFFICE_IP', 'NOT FOUND')
+    }
+    
+    # Test Google Sheets
+    test_results["google_sheets"] = {
+        "url": getattr(config, 'GOOGLE_SCRIPT_URL', 'NOT FOUND'),
+        "test_result": send_to_google_sheet("TestUser", "TEST", ip)
+    }
+    
+    return f"""
+    <h2>Comprehensive Test Results</h2>
+    <pre>{json.dumps(test_results, indent=2)}</pre>
+    <br><br>
+    <a href='/'>Back to Login</a> | 
+    <a href='/debug-config'>Debug Config</a> |
+    <a href='/dashboard'>Dashboard</a>
+    """
 
 
 @app.route("/debug-config")
